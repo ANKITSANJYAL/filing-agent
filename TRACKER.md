@@ -1,0 +1,95 @@
+# TRACKER.md
+
+Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
+
+**Statuses:** `NOT_STARTED` · `IN_PROGRESS` · `BLOCKED` · `CODED` · `EXPLAINED` · `DONE`
+**`DONE` requires `EXPLAINED` first.** Code that works but wasn't walked through is not done.
+
+---
+
+## ⚠️ Explanation Debt
+
+*Items that are `CODED` but not yet `EXPLAINED`. Nag until empty.*
+
+- *(empty)*
+
+---
+
+## 🚧 Blocked — environment
+
+*Visible rather than remembered. Both are human install steps; neither blocks T1.1.*
+
+| ID | Item | Status | Blocking | Unblock with |
+|---|---|---|---|---|
+| E1 | Docker Desktop not installed | `BLOCKED` | T1.4 (Postgres/pgvector), T4.1 (Langfuse) | Install Docker Desktop for Mac; verify `docker --version` |
+| E2 | `uv` not installed | `BLOCKED` | any dependency install / test run | `curl -LsSf https://astral.sh/uv/install.sh \| sh` then `uv sync --extra dev` |
+| E3 | Python 3.12 not present (system has 3.14) | `BLOCKED` | pinned interpreter per §8.14 | resolved automatically by `uv sync` (pyproject pins `==3.12.*`) |
+| E4 | `psql` client not installed | `BLOCKED` | T1.4 manual DB inspection | ships with Docker Postgres image; or `brew install libpq` |
+
+---
+
+## T1 — Data & Retrieval
+
+| ID | Item | Status | Notes |
+|---|---|---|---|
+| T1.1 | EDGAR fetcher + rate limiting | `IN_PROGRESS` | EXPLAIN phase next |
+| T1.2 | Structure-aware chunker + metadata | `NOT_STARTED` | |
+| T1.3 | XBRL facts ingestion | `NOT_STARTED` | |
+| T3.1 | *(pulled forward — see D-0003)* tier-1 XBRL set (~70 Qs) | `NOT_STARTED` | authored blind to retrieval, then frozen |
+| T1.4 | Postgres/pgvector schema | `BLOCKED` | needs E1 (Docker) |
+| T1.5 | Lexical + dense + RRF + rerank pipeline | `NOT_STARTED` | |
+| T1.6 | 50-pair retrieval eval + ablation table | `NOT_STARTED` | W1 done-condition |
+
+## T2 — Agent & MCP
+
+| ID | Item | Status | Notes |
+|---|---|---|---|
+| T2.1 | Pydantic schemas (Claim, Memo, tool I/O) | `NOT_STARTED` | |
+| T2.2 | LangGraph graph + typed state | `NOT_STARTED` | |
+| T2.3 | Tools (retrieve, xbrl_lookup, calculator) | `NOT_STARTED` | |
+| T2.4 | Verification / re-plan loop | `NOT_STARTED` | max 3 re-plans |
+| T2.5 | MCP server | `NOT_STARTED` | |
+| T2.6 | FastAPI service + auth/rate limit | `NOT_STARTED` | |
+
+## T3 — Evals & Ablation
+
+| ID | Item | Status | Notes |
+|---|---|---|---|
+| T3.1 | Tier-1 XBRL set (~70) | `NOT_STARTED` | **moved to T1 block** (D-0003) |
+| T3.2 | Tier-2 extractive set (~30) | `NOT_STARTED` | |
+| T3.3 | FinanceBench mapping + run | `NOT_STARTED` | 1.5-day effort cap (§9) |
+| T3.4 | Judge + calibration (κ) | `NOT_STARTED` | |
+| T3.5 | Citation-faithfulness checker | `NOT_STARTED` | |
+| T3.6 | CI regression gate | `NOT_STARTED` | red-build screenshot is a deliverable |
+| T3.7 | Three-arm ablation run + table | `NOT_STARTED` | model frozen at first run (D-0002b) |
+| T3.8 | Injection defense + poisoned-filing test | `NOT_STARTED` | |
+
+## T4 — Ship & Tell
+
+| ID | Item | Status | Notes |
+|---|---|---|---|
+| T4.1 | Langfuse + dashboard | `BLOCKED` | needs E1 (Docker) |
+| T4.2 | Routing/caching optimization (before/after) | `NOT_STARTED` | |
+| T4.3 | Terraform + k3s + CI/CD deploy | `NOT_STARTED` | |
+| T4.4 | React UI | `NOT_STARTED` | first on the cut list (§9) |
+| T4.5 | Write-up part 1 | `NOT_STARTED` | |
+| T4.6 | Portfolio / resume update | `NOT_STARTED` | |
+
+## T5 — Latency Ladder
+
+| ID | Item | Status | Notes |
+|---|---|---|---|
+| T5.1 | Local dry-run scripts | `NOT_STARTED` | prepare before renting GPU (§9) |
+| T5.2 | vLLM baseline on GPU | `NOT_STARTED` | $60 hard cap total |
+| T5.3 | FP8 rung | `NOT_STARTED` | lossy — accuracy may shift |
+| T5.4 | Prefix-caching rung | `NOT_STARTED` | |
+| T5.5 | Spec-decode rung | `NOT_STARTED` | lossless — flat accuracy is the sanity check |
+| T5.6 | Frontier table + write-up part 2 | `NOT_STARTED` | |
+
+---
+
+## Session Log
+
+| Date | Item | Outcome |
+|---|---|---|
+| 2026-08-14 | Session 0 — scaffold | Repo initialized per CLAUDE.md §5; TRACKER + DECISIONS created; D-0001..D-0004 logged; env gaps E1–E4 recorded as BLOCKED. |
