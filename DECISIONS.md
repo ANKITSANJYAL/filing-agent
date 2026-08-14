@@ -98,3 +98,66 @@ on 150. This is a spend guard, not a quality guard.
 
 **Alternative rejected:** cost estimate alone. An estimate catches "too expensive"; it
 does not catch "expensive and wrong".
+
+---
+
+## D-0005 · 2026-08-14 · Hand-roll the EDGAR fetcher rather than use `edgartools`
+
+**Decision:** Write the fetcher ourselves. ~300 lines across two increments.
+
+**Why:** Rate-limit design and cache-invalidation strategy are precisely what gets
+probed when claiming "I built a pipeline against a rate-limited public API." A library
+would still require learning its failure modes to debug it, so the savings are smaller
+than they appear. Against CLAUDE.md §0 (defend every layer), a dependency here costs
+more than it saves.
+
+**Alternative rejected:** `edgartools`, explicitly permitted by PROPOSAL.md §4.1.
+**Cost of this choice: roughly half a day.** Accepted deliberately.
+
+---
+
+## D-0006 · 2026-08-14 · Corpus scope refinements (8-K filter, amended filings)
+
+**8-K filter:** narrow to **Item 2.02 (Results of Operations)** rather than the vaguer
+"8-Ks with financial exhibits" in PROPOSAL.md §4.1 — a description, not a queryable
+field. What it selects will be shown before committing. **If Item 2.02 8-Ks add little
+beyond the 10-K/10-Q set, drop 8-Ks entirely** and log that here; corpus simplicity beats
+marginal coverage in week one.
+
+**Amended filings:** exclude `10-K/A` from v1, but **record their existence in the
+manifest with a flag**. One numeric question must have exactly one answer; a documented
+exclusion beats a silent ambiguity. Revisit with evidence if a tier-1 question lands on
+a restated figure.
+
+**Alternative rejected:** include amendments and let the agent reconcile. That converts
+a corpus-scope decision into a per-question ambiguity, which is the wrong place to
+resolve it.
+
+---
+
+## D-0007 · 2026-08-14 · Data assertions at every external boundary
+
+**Extends:** CLAUDE.md §1.3.
+
+**Decision:** *Tests verify code; assertions verify data.* Every boundary where external
+data enters the project carries an explicit, hard-failing assertion about what we believe
+is true of it. Not a warning — a raise.
+
+**Why:** The fiscal-year failure mode (see below) has no exception, no red test, and no
+error message. Every downstream step is self-consistent with a corrupt corpus, so the
+error survives all the way into a published table and is only detectable from outside
+the system. The class of bug that self-consistency hides can only be caught at the
+boundary where the data arrives.
+
+**Worked example — the motivating case.** NVIDIA's FY2025 ended January 2025; Apple's
+fiscal year ends late September. Filtering filings by *filing date* while claiming
+*FY2024–FY2025* silently builds the wrong corpus with roughly the right filing count.
+Confirmed live: SEC's submissions API reports `fiscalYearEnd: "0131"` for NVIDIA, so the
+assertion can anchor on SEC's own metadata rather than our assumptions. T1.1b will read
+`period_of_report` per filing, cross-check against `DocumentFiscalYearFocus`, hard-fail
+outside the target set, store `period_of_report` in the manifest for downstream
+re-assertion, and print a per-ticker table for human eyeball against two anchors
+(NVDA ending January, AAPL ending late September).
+
+**Applies to, at minimum:** EDGAR filing metadata (T1.1b), XBRL concept units and periods
+(T1.3), FinanceBench↔EDGAR accession mapping (T3.3), and eval-set answer keys (T3.1).

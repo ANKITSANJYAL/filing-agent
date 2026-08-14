@@ -11,7 +11,8 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 
 *Items that are `CODED` but not yet `EXPLAINED`. Nag until empty.*
 
-- *(empty)*
+- `T1.1a` — EDGAR transport layer. Walkthrough delivered 2026-08-14; **recap questions
+  unanswered**, so it stays `CODED`, not `EXPLAINED`.
 
 ---
 
@@ -32,7 +33,8 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 
 | ID | Item | Status | Notes |
 |---|---|---|---|
-| T1.1 | EDGAR fetcher + rate limiting | `IN_PROGRESS` | EXPLAIN phase next |
+| T1.1a | EDGAR transport: token bucket, UA validation, cache-first client | `CODED` | 15 tests pass; live SEC smoke OK. Awaiting recap. |
+| T1.1b | CIK resolution, submissions parsing, fiscal-period assertion, manifest | `NOT_STARTED` | produces the per-ticker table to eyeball |
 | T1.2 | Structure-aware chunker + metadata | `NOT_STARTED` | |
 | T1.3 | XBRL facts ingestion | `NOT_STARTED` | |
 | T3.1 | *(pulled forward — see D-0003)* tier-1 XBRL set (~70 Qs) | `NOT_STARTED` | authored blind to retrieval, then frozen |
