@@ -11,8 +11,10 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 
 *Items that are `CODED` but not yet `EXPLAINED`. Nag until empty.*
 
-- `T1.1a` — EDGAR transport layer. Walkthrough delivered 2026-08-14; **recap questions
-  unanswered**, so it stays `CODED`, not `EXPLAINED`.
+- `T1.1a` — EDGAR transport layer. Walkthrough delivered 2026-08-14; **recap unanswered**.
+- `T1.1b` — Filing index + assertions. Walkthrough delivered 2026-08-19; **recap unanswered**.
+
+Both stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
 
 ---
 
@@ -34,7 +36,8 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 | ID | Item | Status | Notes |
 |---|---|---|---|
 | T1.1a | EDGAR transport: token bucket, UA validation, cache-first client | `CODED` | 15 tests pass; live SEC smoke OK. Awaiting recap. |
-| T1.1b | CIK resolution, submissions parsing, fiscal-period assertion, manifest | `NOT_STARTED` | produces the per-ticker table to eyeball |
+| T1.1b | Filing index: CIK resolution, submissions parsing, fiscal + completeness assertions | `CODED` | 40 tests pass. Live: 64 filings, 8x(2 10-K + 6 10-Q), both assertions green. |
+| T1.1c | Document download + manifest write | `NOT_STARTED` | next increment |
 | T1.2 | Structure-aware chunker + metadata | `NOT_STARTED` | |
 | T1.3 | XBRL facts ingestion | `NOT_STARTED` | |
 | T3.1 | *(pulled forward — see D-0003)* tier-1 XBRL set (~70 Qs) | `NOT_STARTED` | authored blind to retrieval, then frozen |
@@ -95,3 +98,4 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 | Date | Item | Outcome |
 |---|---|---|
 | 2026-08-14 | Session 0 — scaffold | Repo initialized per CLAUDE.md §5; TRACKER + DECISIONS created; D-0001..D-0004 logged; env gaps E1–E4 recorded as BLOCKED. |
+| 2026-08-19 | T1.1a/b | Transport + filing index coded. Live run exposed two silent corpus defects (XOM successor CIK, JPM overflow window); both fixed, completeness assertion added, 8-Ks dropped. Corpus: 64 filings. |

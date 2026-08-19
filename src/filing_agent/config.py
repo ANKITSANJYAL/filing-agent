@@ -41,6 +41,22 @@ TICKERS: Final[tuple[str, ...]] = (
 
 FISCAL_YEARS: Final[tuple[int, ...]] = (2024, 2025)
 
+# SEC's ticker map points at the *current* registrant, which is not always the filer
+# that submitted the reports in our window. XOM now maps to CIK 2115436
+# ("ExxonMobil Holdings Corp", first filing 2026-07, form 8-K12B — a holding-company
+# reorganization). Every FY2024-FY2025 10-K/10-Q was filed by the predecessor,
+# CIK 34088 ("EXXON MOBIL CORP"). See DECISIONS.md D-0008.
+#
+# This override is correct *for this corpus window only*. A future FY2026 corpus would
+# need the successor CIK, and possibly both.
+CIK_OVERRIDES: Final[dict[str, int]] = {
+    "XOM": 34088,
+}
+
+# One 10-K per ticker per fiscal year. The invariant that would have caught both the
+# XOM and JPM defects (DECISIONS.md D-0009).
+EXPECTED_ANNUAL_REPORTS_PER_TICKER: Final[int] = len(FISCAL_YEARS)
+
 # --- SEC etiquette (CLAUDE.md §4) ---
 
 SEC_MAX_REQUESTS_PER_SECOND: Final[float] = 10.0

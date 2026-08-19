@@ -161,3 +161,83 @@ re-assertion, and print a per-ticker table for human eyeball against two anchors
 
 **Applies to, at minimum:** EDGAR filing metadata (T1.1b), XBRL concept units and periods
 (T1.3), FinanceBench↔EDGAR accession mapping (T3.3), and eval-set answer keys (T3.1).
+
+---
+
+## D-0008 · 2026-08-19 · Pin XOM to the predecessor CIK 34088
+
+**Decision:** `CIK_OVERRIDES = {"XOM": 34088}` in `config.py`.
+
+**Evidence:** SEC's `company_tickers.json` maps `XOM` → CIK **2115436**
+("ExxonMobil Holdings Corp"), an entity whose entire filing history is 28 documents
+beginning 2026-07, including form **8-K12B** — the form filed when securities are
+registered on a successor issuer in a holding-company reorganization. All FY2024–FY2025
+10-Ks and 10-Qs were filed by the predecessor, CIK **34088** ("EXXON MOBIL CORP").
+
+Ticker→CIK resolution was *correct per SEC's current map* and still produced a company
+with zero filings in our window, with no error raised. Found only because the per-ticker
+table showed `XOM 0 0 0`.
+
+**Scope limit:** the override is correct **for the FY2024–FY2025 window only**. A future
+FY2026 corpus needs the successor CIK, and possibly both. Re-check on any scope change.
+
+**Alternative rejected:** auto-follow predecessors via `formerNames` / 8-K12B chains.
+More general, but it silently rewrites which company you are studying — the wrong
+default for a corpus whose scope is a published claim.
+
+---
+
+## D-0009 · 2026-08-19 · Assert corpus *completeness*, not just period correctness
+
+**Extends:** D-0007.
+
+**Decision:** `assert_corpus_complete()` hard-fails unless every ticker has exactly one
+non-amended 10-K per fiscal year.
+
+**Why:** D-0007 asserts that the filings we have are from the right periods. It cannot
+see filings we never retrieved — **an empty result set satisfies it vacuously**. Two
+real defects shipped past it on the first live run:
+
+1. **XOM** resolved to a successor entity → 0 filings (D-0008).
+2. **JPM** overflowed SEC's inline `filings.recent` window. That cap is measured in
+   *documents*, not years: JPM files ~25k/year (mostly structured-note prospectuses),
+   so `recent` held 25,806 rows reaching back only to 2025-08-19, and all of FY2024 sat
+   in 69 unread `filings.files[]` overflow files. Fixed by `iter_all_filings()`, which
+   fetches overflow files whose date range overlaps the corpus window.
+
+Combined result: 13 of an expected 16 annual reports, reported as success.
+
+**Generalization:** a correctness assertion over a set says nothing about the set being
+complete. Every boundary needs both — *"is what I have right?"* and *"do I have all of
+it?"* Carry this into T1.3 (XBRL facts per concept/period) and T3.3 (FinanceBench
+mapping coverage).
+
+---
+
+## D-0010 · 2026-08-19 · Drop 8-Ks from the corpus entirely
+
+**Reverses:** D-0006's Item 2.02 filter. Exercises the pre-authorized exit condition
+("if it adds little beyond the 10-K/10-Q set, drop 8-Ks entirely and log it").
+
+**Evidence from the live index** — the Item 2.02 filter worked and selected 49 8-Ks, but:
+
+1. **Wrong date semantics.** For 10-K/10-Q, `reportDate` is the fiscal period end. For
+   8-K it is the *event date*. `assert_fiscal_periods` caught this in production on
+   `JPM 8-K ends 2024-01-12` — JPM's Q4-**2023** earnings release, which our rule
+   labelled FY2024. Every 8-K was potentially mis-assigned by a year.
+2. **Not XBRL-tagged.** EX-99 earnings exhibits are press releases, so they cannot
+   participate in tier-1 numeric verification — the project's headline eval story.
+3. **Non-GAAP contamination.** Their figures can *contradict* the XBRL facts we grade
+   against, which is worse than absent coverage.
+
+**Corpus effect:** 99 → **64 filings** (8 tickers × 2 10-K × 6 10-Q). This is below
+PROPOSAL.md §4.1's "≈90–110 filings" estimate, which assumed 8-Ks were included. §5 caps
+the corpus from above, not below; 64 GAAP, XBRL-backed filings is the right shape for an
+eval-first project.
+
+**Alternative rejected:** keep 8-Ks with a form-specific fiscal-year rule. Buys back
+non-GAAP press releases that still cannot be XBRL-verified — cost without the benefit.
+
+**Reversible:** re-add `8-K` to `PERIODIC_FORMS` and give 8-Ks their own period rule.
+Revisit only if a tier-2 or FinanceBench question demonstrably needs earnings-release
+text.
