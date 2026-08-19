@@ -14,9 +14,16 @@ venv/
 .ruff_cache/
 .mypy_cache/
 
-# Cached SEC filings — large, regenerable, and re-downloading them
+# Cached SEC filings — ~230 MB, regenerable, and re-downloading them
 # would violate our own rate-limit etiquette. Kept local only.
-data/raw/
+#
+# NOTE: `data/raw/*` not `data/raw/` — git will not descend into an excluded
+# *directory*, so a negation inside one is silently ignored. Excluding the
+# contents keeps the directory walkable and lets the negation below take effect.
+data/raw/*
+# The manifest IS committed: 27 KB, and it defines exactly which 64 filings
+# (with content hashes) produced every published number. Reproducibility artifact.
+!data/raw/manifest.jsonl
 data/cache/
 *.sqlite
 *.db
