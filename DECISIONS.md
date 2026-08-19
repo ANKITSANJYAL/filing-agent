@@ -241,3 +241,40 @@ non-GAAP press releases that still cannot be XBRL-verified — cost without the 
 **Reversible:** re-add `8-K` to `PERIODIC_FORMS` and give 8-Ks their own period rule.
 Revisit only if a tier-2 or FinanceBench question demonstrably needs earnings-release
 text.
+
+---
+
+## D-0011 · 2026-08-19 · Commit the manifest; gitignore the filings
+
+**Decision:** `data/raw/manifest.jsonl` (27 KB) is committed. The 64 HTML filings
+(230.8 MB) are not.
+
+**Why:** The manifest is the corpus *definition* — ticker, accession, period, and a
+SHA-256 per filing. Committing it means a published number can be traced to exactly
+which documents produced it, and a clone can verify byte-identity after re-fetching.
+Committing 230 MB of regenerable HTML buys nothing and bloats every clone.
+
+**Implementation gotcha worth remembering:** the first attempt used
+`data/raw/` + `!data/raw/manifest.jsonl` and silently failed. Git does not descend into
+an excluded *directory*, so a negation inside one is never evaluated. Excluding the
+contents (`data/raw/*`) keeps the directory walkable and lets the negation apply.
+
+**Pairs with:** D-0002 (config hash) — corpus fingerprint + config hash together pin
+which filings and which model produced any result.
+
+**Fingerprint at time of writing:** `4c6b9df256978e8c37d1317dd8b02ef2b38d44b55d694582d32b021d69806ab4`
+
+---
+
+## D-0012 · 2026-08-19 · Known gap: submissions JSON is not cached
+
+**Status:** accepted for now, not fixed.
+
+`EdgarClient.download()` is cache-first, but `get_json()` is not — so re-running the
+pipeline costs **36 requests to re-index** even though 0 filings are re-downloaded.
+Harmless at this scale and well inside rate limits.
+
+**Not fixed now because** submissions JSON is the one input that legitimately changes
+(new filings appear), so caching it needs a TTL or explicit invalidation, and that is a
+real design decision rather than a one-liner. Revisit if indexing cost becomes annoying
+or if CI starts re-indexing on every run.
