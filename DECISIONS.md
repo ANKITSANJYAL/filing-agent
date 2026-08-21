@@ -448,3 +448,77 @@ label, which is the failure the whole extraction design exists to prevent.
 **Known minor waste:** 16 of 9,449 chunks (0.2%) are under 40 chars — section-heading
 fragments stranded at span boundaries. Not worth merging logic yet; revisit if retrieval
 eval shows them polluting results.
+
+---
+
+## D-0019 · 2026-08-21 · Concept set measured in-window; no universal revenue tag
+
+**Decision:** Tier-1 concepts are the 17 us-gaap concepts reported by all eight tickers
+**within our 64 filings**, plus a per-ticker revenue concept.
+
+**The measurement error worth remembering:** my first pass measured concept availability
+across each company's *entire* EDGAR history and concluded `Revenues` was universal
+(8/8). Measured within our corpus window it is not — AAPL and MSFT reported `Revenues`
+years ago but tag revenue differently in FY2024-25. Availability over all history is a
+different question from availability in the corpus, and only the second one matters.
+
+**PROPOSAL.md §9 is partly wrong for this corpus.** It names GrossProfit as a safe
+standard concept; only 4 of 8 tickers report it, because a bank has no gross profit and
+Exxon does not present one. This is the §9 concept-mapping risk, now quantified rather
+than anticipated.
+
+**No revenue concept is common to all eight** — the single most obvious metric in a
+financial corpus requires an explicit per-ticker map:
+
+| Concept | Tickers |
+|---|---|
+| `Revenues` | NVDA, XOM, PFE, WMT, COST |
+| `RevenueFromContractWithCustomerExcludingAssessedTax` | AAPL, MSFT |
+| `RevenuesNetOfInterestExpense` | JPM |
+
+JPM's tag is the economically correct concept for a bank, not a workaround: revenue net
+of interest expense is how a bank's top line is defined.
+
+**Direct consequence of the locked cross-sector corpus (§4.1).** Sector diversity buys
+generalisation and costs concept uniformity. Both belong in the write-up.
+
+---
+
+## D-0020 · 2026-08-21 · Restatements resolved to the most recently filed value
+
+**Decision:** `resolve_restatements()` collapses each (ticker, concept, unit, period) to
+one value, keeping the most recently filed, and marks it `restated=True`.
+`assert_no_conflicting_values` hard-fails on unresolved conflicts, with known corporate
+actions allowlisted in `config.XBRL_RESTATEMENT_ALLOWLIST`.
+
+**What forced it:** NVIDIA's **10-for-1 stock split (June 2024)**. FY2023 diluted EPS is
+`11.93` in the original 10-K and `1.19` as a later comparative; diluted share count is
+2,507,000,000 vs 25,070,000,000 — exactly 10x. Both are correct as filed.
+
+**Why this is load-bearing:** D-0006 requires that one numeric question have exactly one
+answer. Without resolution, *"what was NVDA's FY2023 diluted EPS?"* has two defensible
+answers depending on which filing the retriever happened to surface — and the eval would
+score the agent wrong for being right. That failure would be near-impossible to diagnose
+from the eval output alone.
+
+**Why most-recently-filed:** a split is a real economic event and the adjusted figure is
+the current basis — the answer an analyst gives today. The alternative (prefer the
+original filing) is equally defensible in principle but would make every per-share
+question in the corpus answer on a stale basis.
+
+**Measured:** 2,971 raw facts → 2,010 resolved; 9 restated, all NVDA per-share/share-count.
+
+---
+
+## D-0021 · 2026-08-21 · XBRL facts restricted to accessions in the corpus manifest
+
+**Decision:** `load_facts` keeps a fact only if its `accn` is a filing in
+`manifest.jsonl`.
+
+**Why:** it makes traceability structural rather than aspirational — every verified
+number points at a document we hold and can cite, so a tier-1 verification can always
+produce a citation. It also removes a whole class of ambiguity for free, by excluding
+restatements that arrive in filings outside the corpus window.
+
+**Measured:** 2,010 facts across 8 tickers (238-286 each), all passing
+`assert_facts_traceable`.

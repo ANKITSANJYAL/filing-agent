@@ -72,6 +72,18 @@ STUB_SECTION_ALLOWLIST: Final[dict[str, frozenset[str]]] = {
     "PFE": frozenset({"MARKET_RISK"}),
 }
 
+# (ticker, concept) pairs where filings legitimately disagree on a value because of a
+# corporate action, not a data error. NVIDIA's 10-for-1 split (June 2024) restated every
+# per-share and share-count figure: FY2023 diluted EPS is 11.93 in the original 10-K and
+# 1.19 as a later comparative. Resolution rule and rationale in DECISIONS.md D-0020.
+# Anything NOT listed here hard-fails, so an unexpected restatement stops the run.
+XBRL_RESTATEMENT_ALLOWLIST: Final[frozenset[tuple[str, str]]] = frozenset({
+    ("NVDA", "EarningsPerShareBasic"),
+    ("NVDA", "EarningsPerShareDiluted"),
+    ("NVDA", "WeightedAverageNumberOfSharesOutstandingBasic"),
+    ("NVDA", "WeightedAverageNumberOfDilutedSharesOutstanding"),
+})
+
 # --- SEC etiquette (CLAUDE.md §4) ---
 
 SEC_MAX_REQUESTS_PER_SECOND: Final[float] = 10.0
