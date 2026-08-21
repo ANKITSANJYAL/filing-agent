@@ -16,8 +16,9 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 - `T1.1c` — Corpus download + manifest. Walkthrough delivered 2026-08-19; **recap unanswered**.
 - `T1.2a` — HTML extraction. Walkthrough delivered 2026-08-21; **recap unanswered**.
 - `T1.2b` — Section detection. Walkthrough delivered 2026-08-21; **recap unanswered**.
+- `T1.2c` — Chunker. Walkthrough delivered 2026-08-21; **recap unanswered**.
 
-All five stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
+All six stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
 
 ---
 
@@ -43,7 +44,7 @@ All five stay `CODED` rather than `DONE` until the recap questions are answered 
 | T1.1c | Document download + manifest + integrity gate | `CODED` | 53 tests pass. 64 filings / 230.8 MB on disk; re-run costs 0 requests. |
 | T1.2a | HTML extraction: iXBRL stripping, table geometry | `CODED` | 67 tests pass. 231 MB -> 17.0 MB text in 7.4s; both assertions green on all 64. |
 | T1.2b | Item-anchored section detection + substance assertion | `CODED` | 79 tests pass. 64/64 filings pass both assertions. |
-| T1.2c | Chunking within sections + per-chunk metadata | `NOT_STARTED` | must not split inside a table |
+| T1.2c | Chunking + per-chunk metadata | `CODED` | 92 tests pass. 9,449 chunks, median ~477 tok, all pass assert_chunks_valid. |
 | T1.3 | XBRL facts ingestion | `NOT_STARTED` | |
 | T3.1 | *(pulled forward — see D-0003)* tier-1 XBRL set (~70 Qs) | `NOT_STARTED` | authored blind to retrieval, then frozen |
 | T1.4 | Postgres/pgvector schema | `BLOCKED` | needs E1 (Docker) |
@@ -107,3 +108,4 @@ All five stay `CODED` rather than `DONE` until the recap questions are answered 
 | 2026-08-19 | T1.1c | Corpus downloaded: 64 filings, 230.8 MB, fingerprint 4c6b9df2. Manifest committed (27 KB) as the reproducibility artifact; raw HTML gitignored. |
 | 2026-08-21 | T1.2a | Failure demo first: naive stripping made 33% of NVDA text into iXBRL metadata, and 512-word chunks severed table rows. Built extractor dropping ix: subtrees + preserving row geometry. |
 | 2026-08-21 | T1.2b | Item headings proven unreliable as content boundaries (48/64 slots substantive). Content-anchoring attempted, failed to converge, rejected with evidence. Shipped Item anchors + per-ticker stub allowlist: 64/64 pass. |
+| 2026-08-21 | T1.2c | Chunker shipped: 9,449 chunks across 64 filings, table rows structurally unsplittable, whole-document coverage so NVDA's displaced statements stay retrievable. T1.2 complete. |

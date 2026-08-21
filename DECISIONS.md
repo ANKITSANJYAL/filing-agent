@@ -401,3 +401,50 @@ all tier-1 XBRL questions are unaffected.
 **Design note worth keeping:** a section ends at the next titled Item heading of any
 different item, *not* at the next tracked section — otherwise RISK_FACTORS swallows
 Items 1B through 6.
+
+---
+
+## D-0017 · 2026-08-21 · Chunk the whole document, not just detected sections
+
+**Decision:** Every line is chunked. Lines outside a detected section are tagged
+`UNSECTIONED` rather than dropped.
+
+**Why:** D-0016 leaves three tickers with stub sections — NVDA's financial statements
+sit outside Item 8, JPM's and XOM's MD&A outside Item 7. Chunking only inside detected
+sections would silently discard that content, so a question about NVDA's revenue would
+have nothing to retrieve.
+
+**Verified:** NVDA FY2025's revenue figure (130,497) appears in 6 chunks, one of them
+`UNSECTIONED`. That filing has 1 `FINANCIAL_STATEMENTS` chunk (the allowlisted stub) and
+81 `UNSECTIONED` chunks carrying the actual statements. The content is retrievable by
+lexical and dense search; only the section *filter* is unavailable for it.
+
+**Corpus-wide:** 9,449 chunks, 46.5% `UNSECTIONED`. That is expected — a 10-K also
+contains Items 2-6, 9-16, exhibits, and signatures, none of which are tracked sections.
+
+**Alternative rejected:** chunk only within sections. Smaller, tidier index that quietly
+loses the financial statements of one of the eight tickers.
+
+---
+
+## D-0018 · 2026-08-21 · Size chunks in characters; calibrate against count_tokens later
+
+**Decision:** Chunks target 512 tokens approximated at **4 chars/token**, with a 768-token
+ceiling that a table run may use to stay whole.
+
+**Why not `tiktoken`:** it is OpenAI's tokenizer and mis-sizes Claude inputs; the correct
+tool is Anthropic's `count_tokens` endpoint. No API key is configured yet (E2/.env), so
+sizing by characters is honest arithmetic rather than a wrong tokenizer dressed up as a
+right one.
+
+**Calibration owed:** once a key exists, run `count_tokens` over a sample of real chunks
+and correct `CHARS_PER_TOKEN`. Recorded here so it is not forgotten.
+
+**Measured:** median 477 estimated tokens, mean 447, p95 546. Max 1,171 — every chunk
+above the ceiling is a *single* table row (largest 4,684 chars). The assertion permits
+oversize single-line chunks deliberately: splitting a row separates a figure from its
+label, which is the failure the whole extraction design exists to prevent.
+
+**Known minor waste:** 16 of 9,449 chunks (0.2%) are under 40 chars — section-heading
+fragments stranded at span boundaries. Not worth merging logic yet; revisit if retrieval
+eval shows them polluting results.
