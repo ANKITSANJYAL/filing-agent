@@ -16,7 +16,7 @@ from filing_agent.ingest.edgar_client import (
     validate_user_agent,
 )
 
-VALID_UA = "Ankit Sanjyal asanjyal56@gmail.com"
+VALID_UA = "Test User test@example.com"
 
 
 def _transport(status: int = 200, body: bytes = b"<html>10-K</html>", counter: list | None = None):

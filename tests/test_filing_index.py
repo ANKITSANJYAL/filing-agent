@@ -22,7 +22,7 @@ from filing_agent.ingest.filing_index import (
     summarize_table,
 )
 
-UA = "Ankit Sanjyal asanjyal56@gmail.com"
+UA = "Test User test@example.com"
 
 # Columns mirror SEC's real payload shape: parallel arrays, not objects.
 SUBMISSIONS = {

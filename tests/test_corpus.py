@@ -23,7 +23,7 @@ from filing_agent.ingest.corpus import (
 )
 from filing_agent.ingest.filing_index import FilingRef, FiscalPeriodError
 
-UA = "Ankit Sanjyal asanjyal56@gmail.com"
+UA = "Test User test@example.com"
 BODY = b"<html><body>Item 7. MD&A</body></html>"
 
 
