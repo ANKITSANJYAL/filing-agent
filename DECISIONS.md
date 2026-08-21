@@ -278,3 +278,64 @@ Harmless at this scale and well inside rate limits.
 (new filings appear), so caching it needs a TTL or explicit invalidation, and that is a
 real design decision rather than a one-liner. Revisit if indexing cost becomes annoying
 or if CI starts re-indexing on every run.
+
+---
+
+## D-0013 · 2026-08-21 · Extract with stdlib `html.parser`, not lxml/BeautifulSoup
+
+**Decision:** HTML extraction uses Python's stdlib `html.parser`. No new dependency.
+
+**Why:** Measured, not assumed — 64 filings (231 MB) extract in **7.4s**. lxml would be
+faster, but nothing here is latency-bound: extraction runs once, offline. Zero
+dependencies also keeps the module trivially portable into CI and the k3s image, and is
+consistent with D-0005 (hand-roll what you must defend).
+
+**Secondary reason:** `uv` was still uninstalled (E2), so lxml could not be added without
+touching system Python. That forced the measurement, which then justified the choice on
+its merits.
+
+**Alternative rejected:** lxml. Revisit only if extraction becomes a bottleneck — it is
+7 seconds for the entire corpus.
+
+---
+
+## D-0014 · 2026-08-21 · Drop iXBRL machine subtrees before extraction
+
+**Decision:** `<ix:header>`, `<ix:hidden>`, `<script>`, `<style>` subtrees are dropped
+wholesale. `assert_no_xbrl_metadata` hard-fails if any XBRL namespace prefix
+(`us-gaap:`, `xbrli:`, `dei:`, `ix:`, `iso4217:`, `srt:`, `utr:`) survives.
+
+**Evidence (NVDA FY2025 10-K, measured):** naive tag-stripping yielded 381,767 chars, of
+which the `<ix:header>` block was **125,940 — 33% of all extracted "text"**. It produced
+the two densest numeric chunks in the document: entity IDs, axis members, and context
+dates that no human reader ever sees. Embedded, those chunks would be pure retrieval
+noise competing with real content.
+
+**Corpus-wide result:** 231 MB markup → 17.0 MB text (**92.4% of the file was markup**).
+All 64 filings pass both extraction assertions.
+
+**Calibration note — read before trusting the plausibility floor.** `min_ratio` is 2%.
+Observed text ratios across the corpus run from **2.7% (MSFT 10-Q)** to **17.2% (NVDA
+10-K)**. The floor therefore sits only ~26% below the observed minimum — thin margin. It
+is a bail-out detector, not a quality gate; a future filing tripping it should be
+inspected by hand rather than assumed broken.
+
+---
+
+## D-0015 · 2026-08-21 · Preserve table rows as single lines; tidy spacer cells
+
+**Decision:** Table rows are emitted one per line with ` | ` between cells. Empty
+layout-spacer cells are dropped and orphaned `$`/`(` symbols reattached to their figure.
+
+**Why:** Fixed-size chunking severed rows mid-cell — chunk 101 ended
+`...Deferred Restricted Stock`, chunk 102 opened `Unit Agreement (2016) 10-K 10.26`.
+A figure separated from its label is unusable for numeric verification, which is the
+project's headline claim.
+
+Untidied, a three-year row read `Gross profit | 97,858 | | | 44,301 | | | 15,356`.
+Tidied: `Revenue | $130,497 | $60,922 | Up 114%` — a single line sufficient to answer a
+growth question. Genuine nulls are em dashes, not blanks, so dropping empty cells loses
+no data (test asserts this).
+
+**Still open for T1.2b:** row-level integrity does not survive *chunk* boundaries yet.
+The chunker must not split inside a table.
