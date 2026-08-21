@@ -339,3 +339,65 @@ no data (test asserts this).
 
 **Still open for T1.2b:** row-level integrity does not survive *chunk* boundaries yet.
 The chunker must not split inside a table.
+
+---
+
+## D-0016 · 2026-08-21 · Item-anchored sections + allowlist; content-anchoring rejected
+
+**Decision:** Sections are located by Item headings, choosing per item the occurrence
+that owns the most content. Required sections that are cross-reference stubs are
+allowlisted per ticker in `config.STUB_SECTION_ALLOWLIST`; anything unlisted hard-fails.
+
+**Result:** 64/64 filings pass both assertions (ordering + substance), 7.3s.
+
+### The finding that forced this
+
+PROPOSAL.md §4.1 says "chunk by document structure — Item 1A, Item 7, Item 7A, Item 8",
+which assumes an Item heading owns its content. Measured across all 16 10-Ks, **48 of 64
+section-slots are substantive**; the 16 exceptions are four structural conventions:
+
+| Ticker | Stub sections | Cause |
+|---|---|---|
+| JPM | MD&A, 7A, Item 8 | incorporated by reference to page ranges |
+| XOM | MD&A, 7A, Item 8 | same |
+| NVDA | Item 8 | statements filed under Part IV, Item 15 |
+| PFE | 7A | genuinely brief, cross-references the MD&A |
+
+Nothing errors in the naive case: JPM's MD&A chunk would simply be *"Refer to pages
+133-142."* Tier-1 XBRL evals would still pass (XBRL is independent of sectioning), so the
+scoreboard would look healthy while tier-2 and FinanceBench failed on three tickers —
+and the likely misdiagnosis is "weak retrieval", costing a week of chunker tuning.
+
+### Why content-anchoring was attempted and rejected
+
+Two resolvers were built and both failed to converge:
+
+1. **Independent max-span per section** — rescued JPM (MD&A 2 → 3,673 lines) but broke
+   COST/WMT (MD&A 140 → 3 lines): nothing forced anchors into document order, so a later
+   section's heading could be selected before an earlier one.
+2. **Order-constrained DP** maximising substantive-section count — fixed NVDA and
+   AAPL/MSFT, still left COST/WMT/PFE MD&A at 2-3 lines and cut JPM FY2025 MD&A to 52.
+
+Root cause: these documents repeat section names in the table of contents, in running
+page headers (JPM prints "Management's discussion and analysis" **41 times**), and in
+cross-references. A short-line heuristic cannot separate them. Each iteration traded one
+filing's correctness for another's — a sign of overfitting to 16 documents by eye.
+
+**Deferred, not abandoned.** If T1.6's retrieval eval shows JPM/XOM MD&A questions
+failing, we will have a measured reason to invest and a scoreboard to verify against.
+
+**Cost accepted:** JPM and XOM MD&A are not section-filterable in v1. Both tickers still
+contribute Risk Factors (JPM: 668-712 lines) and financial statements via other sections;
+all tier-1 XBRL questions are unaffected.
+
+### Two of my own bugs this surfaced
+
+- **A 160-char heading cap silently dropped COST's real MD&A heading**, which runs 171
+  chars because of a parenthetical about units. The cap is now 400 — prose almost never
+  *begins* with "Item N", so the leading anchor does the discriminating, not the length.
+- **The separator class omitted em/en dashes.** COST writes `Item 7—Management's
+  Discussion`. Both are regression-tested.
+
+**Design note worth keeping:** a section ends at the next titled Item heading of any
+different item, *not* at the next tracked section — otherwise RISK_FACTORS swallows
+Items 1B through 6.

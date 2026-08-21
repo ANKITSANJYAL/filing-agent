@@ -57,6 +57,21 @@ CIK_OVERRIDES: Final[dict[str, int]] = {
 # XOM and JPM defects (DECISIONS.md D-0009).
 EXPECTED_ANNUAL_REPORTS_PER_TICKER: Final[int] = len(FISCAL_YEARS)
 
+# Sections that are known to be cross-reference stubs rather than content, per ticker.
+# Measured across all 16 10-Ks (D-0016): 48 of 64 section-slots are substantive and
+# every exception below is a documented structural convention, not a parser bug.
+# The assertion hard-fails on any stub NOT listed here, so a new one stops the run.
+STUB_SECTION_ALLOWLIST: Final[dict[str, frozenset[str]]] = {
+    # Incorporates MD&A, market risk, and financial statements by reference to page
+    # ranges elsewhere in the document.
+    "JPM": frozenset({"MDA", "MARKET_RISK", "FINANCIAL_STATEMENTS"}),
+    "XOM": frozenset({"MDA", "MARKET_RISK", "FINANCIAL_STATEMENTS"}),
+    # Item 8 points at the statements filed under Part IV, Item 15.
+    "NVDA": frozenset({"FINANCIAL_STATEMENTS"}),
+    # Genuinely brief Item 7A that cross-references the MD&A market-risk discussion.
+    "PFE": frozenset({"MARKET_RISK"}),
+}
+
 # --- SEC etiquette (CLAUDE.md §4) ---
 
 SEC_MAX_REQUESTS_PER_SECOND: Final[float] = 10.0

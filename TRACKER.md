@@ -15,8 +15,9 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 - `T1.1b` — Filing index + assertions. Walkthrough delivered 2026-08-19; **recap unanswered**.
 - `T1.1c` — Corpus download + manifest. Walkthrough delivered 2026-08-19; **recap unanswered**.
 - `T1.2a` — HTML extraction. Walkthrough delivered 2026-08-21; **recap unanswered**.
+- `T1.2b` — Section detection. Walkthrough delivered 2026-08-21; **recap unanswered**.
 
-All four stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
+All five stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
 
 ---
 
@@ -41,7 +42,8 @@ All four stay `CODED` rather than `DONE` until the recap questions are answered 
 | T1.1b | Filing index: CIK resolution, submissions parsing, fiscal + completeness assertions | `CODED` | 40 tests pass. Live: 64 filings, 8x(2 10-K + 6 10-Q), both assertions green. |
 | T1.1c | Document download + manifest + integrity gate | `CODED` | 53 tests pass. 64 filings / 230.8 MB on disk; re-run costs 0 requests. |
 | T1.2a | HTML extraction: iXBRL stripping, table geometry | `CODED` | 67 tests pass. 231 MB -> 17.0 MB text in 7.4s; both assertions green on all 64. |
-| T1.2b | Item-section segmentation + chunking + metadata | `NOT_STARTED` | must not split inside a table |
+| T1.2b | Item-anchored section detection + substance assertion | `CODED` | 79 tests pass. 64/64 filings pass both assertions. |
+| T1.2c | Chunking within sections + per-chunk metadata | `NOT_STARTED` | must not split inside a table |
 | T1.3 | XBRL facts ingestion | `NOT_STARTED` | |
 | T3.1 | *(pulled forward — see D-0003)* tier-1 XBRL set (~70 Qs) | `NOT_STARTED` | authored blind to retrieval, then frozen |
 | T1.4 | Postgres/pgvector schema | `BLOCKED` | needs E1 (Docker) |
@@ -104,3 +106,4 @@ All four stay `CODED` rather than `DONE` until the recap questions are answered 
 | 2026-08-19 | T1.1a/b | Transport + filing index coded. Live run exposed two silent corpus defects (XOM successor CIK, JPM overflow window); both fixed, completeness assertion added, 8-Ks dropped. Corpus: 64 filings. |
 | 2026-08-19 | T1.1c | Corpus downloaded: 64 filings, 230.8 MB, fingerprint 4c6b9df2. Manifest committed (27 KB) as the reproducibility artifact; raw HTML gitignored. |
 | 2026-08-21 | T1.2a | Failure demo first: naive stripping made 33% of NVDA text into iXBRL metadata, and 512-word chunks severed table rows. Built extractor dropping ix: subtrees + preserving row geometry. |
+| 2026-08-21 | T1.2b | Item headings proven unreliable as content boundaries (48/64 slots substantive). Content-anchoring attempted, failed to converge, rejected with evidence. Shipped Item anchors + per-ticker stub allowlist: 64/64 pass. |
