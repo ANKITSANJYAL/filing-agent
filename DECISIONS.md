@@ -522,3 +522,49 @@ restatements that arrive in filings outside the corpus window.
 
 **Measured:** 2,010 facts across 8 tickers (238-286 each), all passing
 `assert_facts_traceable`.
+
+---
+
+## D-0022 · 2026-08-22 · Tier-1 eval set generated from facts, frozen at 72 questions
+
+**Decision:** Questions are generated *from* the resolved XBRL fact set, not authored by
+hand. `evals/tier1_pool.jsonl` holds all 564; `evals/tier1.jsonl` holds a frozen,
+committed 72-question CI set. Both are committed.
+
+**Why generation satisfies D-0003's blindness condition better than hand-authoring:**
+the answer key is XBRL by construction. There is no step at which a human could see what
+the retrieval system answers well and drift the questions toward it.
+
+**Frozen set shape:** 9 per ticker, 24 per question type (point / yoy_change / yoy_pct),
+weighted by `CONCEPT_PRIORITY` toward revenue, net income, diluted EPS and total assets.
+Selection is a stable sort with no RNG, so regeneration is byte-identical on any machine
+— which is what makes "frozen and committed" meaningful.
+
+**Restated facts generate no questions.** An agent reading NVDA's FY2024 10-K correctly
+reports diluted EPS of 11.93 while the resolved key says 1.19 (D-0020). Grading that
+wrong would penalise a correct answer, so those 9 facts are excluded.
+
+---
+
+## D-0023 · 2026-08-22 · Exact grading, but derived values computed in Decimal
+
+**Decision:** Point and change questions grade on **exact equality**. Percentage
+questions are rounded to 2dp and graded with an absolute tolerance of 0.005 — any answer
+that rounds to the same 2dp is correct.
+
+**Two bugs found and fixed here, in sequence:**
+
+1. **Too loose.** The initial 1e-6 *relative* tolerance allowed **$72,880 of error** on a
+   $72.88B figure, while PROPOSAL.md §4.4.1 promises "exact-match vs EDGAR facts". Tests
+   caught it: an off-by-one-dollar answer graded correct.
+2. **Then too strict.** Tightening to exact equality broke 30 of 72 keys, because
+   subtracting decimal amounts in binary float injects artifacts that are not in the
+   data — `7.09 - 5.71` yields `1.3800000000000008`, so the key rejected the correct
+   answer of `1.38`. Fixed by computing derived values with `decimal.Decimal`.
+
+**After the fix:** 0 keys carry float dust, every question grades its own key, and none
+accepts an off-by-one answer. EPS change keys read `1.38`, `1.65`, `0.27`, `-0.05`.
+
+**Worth remembering:** "exact match" is a claim about the *comparison*, but it only holds
+if the *arithmetic producing the key* is exact too. The first fix addressed the
+comparison and silently broke the arithmetic.

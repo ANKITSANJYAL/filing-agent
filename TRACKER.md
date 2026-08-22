@@ -18,8 +18,9 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 - `T1.2b` — Section detection. Walkthrough delivered 2026-08-21; **recap unanswered**.
 - `T1.2c` — Chunker. Walkthrough delivered 2026-08-21; **recap unanswered**.
 - `T1.3` — XBRL facts. Walkthrough delivered 2026-08-21; **recap unanswered**.
+- `T3.1` — Tier-1 eval set. Walkthrough delivered 2026-08-22; **recap unanswered**.
 
-All seven stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
+All eight stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
 
 ---
 
@@ -47,7 +48,7 @@ All seven stay `CODED` rather than `DONE` until the recap questions are answered
 | T1.2b | Item-anchored section detection + substance assertion | `CODED` | 79 tests pass. 64/64 filings pass both assertions. |
 | T1.2c | Chunking + per-chunk metadata | `CODED` | 92 tests pass. 9,449 chunks, median ~477 tok, all pass assert_chunks_valid. |
 | T1.3 | XBRL facts ingestion | `CODED` | 107 tests pass. 2,010 resolved facts, 8 tickers, all 3 assertions green. |
-| T3.1 | *(pulled forward — see D-0003)* tier-1 XBRL set (~70 Qs) | `NOT_STARTED` | authored blind to retrieval, then frozen |
+| T3.1 | *(pulled forward — D-0003)* tier-1 XBRL set | `CODED` | 127 tests pass. 72 frozen questions committed; 564-question pool. |
 | T1.4 | Postgres/pgvector schema | `BLOCKED` | needs E1 (Docker) |
 | T1.5 | Lexical + dense + RRF + rerank pipeline | `NOT_STARTED` | |
 | T1.6 | 50-pair retrieval eval + ablation table | `NOT_STARTED` | W1 done-condition |
@@ -67,7 +68,7 @@ All seven stay `CODED` rather than `DONE` until the recap questions are answered
 
 | ID | Item | Status | Notes |
 |---|---|---|---|
-| T3.1 | Tier-1 XBRL set (~70) | `NOT_STARTED` | **moved to T1 block** (D-0003) |
+| T3.1 | Tier-1 XBRL set (72) | `CODED` | **moved to T1 block** (D-0003). Frozen set committed. |
 | T3.2 | Tier-2 extractive set (~30) | `NOT_STARTED` | |
 | T3.3 | FinanceBench mapping + run | `NOT_STARTED` | 1.5-day effort cap (§9) |
 | T3.4 | Judge + calibration (κ) | `NOT_STARTED` | |
@@ -111,3 +112,4 @@ All seven stay `CODED` rather than `DONE` until the recap questions are answered
 | 2026-08-21 | T1.2b | Item headings proven unreliable as content boundaries (48/64 slots substantive). Content-anchoring attempted, failed to converge, rejected with evidence. Shipped Item anchors + per-ticker stub allowlist: 64/64 pass. |
 | 2026-08-21 | T1.2c | Chunker shipped: 9,449 chunks across 64 filings, table rows structurally unsplittable, whole-document coverage so NVDA's displaced statements stay retrievable. T1.2 complete. |
 | 2026-08-21 | T1.3 | XBRL ingested: 2,971 raw -> 2,010 resolved facts. Found NVDA 10:1 split restating all per-share figures, and that no revenue concept is common to all 8 tickers. T3.1 now unblocked. |
+| 2026-08-22 | T3.1 | Tier-1 eval set generated from XBRL facts: 564 pool, 72 frozen + committed. Two grading bugs found by tests (tolerance too loose, then float dust from binary subtraction); fixed with Decimal arithmetic. |
