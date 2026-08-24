@@ -270,7 +270,8 @@ def assert_questions_valid(
             problems.append(f"{question.question_id}: uncitable source {sorted(orphan)}")
         if not question.grade(question.expected_value):
             problems.append(f"{question.question_id}: does not grade its own answer")
-        if isinstance(question.expected_value, float) and question.expected_value != question.expected_value:
+        expected = question.expected_value
+        if isinstance(expected, float) and expected != expected:
             problems.append(f"{question.question_id}: NaN expected value")
     if problems:
         raise Tier1Error(f"{source}: " + "; ".join(problems[:8]))

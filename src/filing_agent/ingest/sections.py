@@ -13,6 +13,7 @@ attempted and rejected — see that decision for why.
 from __future__ import annotations
 
 import re
+from itertools import pairwise
 from typing import Final
 
 from pydantic import BaseModel
@@ -118,10 +119,11 @@ def find_sections(lines: list[str], form: str = "10-K") -> list[Section]:
 
 def assert_sections_ordered(sections: list[Section], source: str = "<filing>") -> None:
     """Sections must not overlap; an overlap means two items resolved to one region."""
-    for a, b in zip(sections, sections[1:]):
+    for a, b in pairwise(sections):
         if a.end_line > b.start_line:
             raise SectionError(
-                f"{source}: {a.name} (ends {a.end_line}) overlaps {b.name} (starts {b.start_line})"
+                f"{source}: {a.name} (ends {a.end_line}) overlaps "
+                f"{b.name} (starts {b.start_line})"
             )
 
 

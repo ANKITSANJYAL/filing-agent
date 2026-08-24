@@ -137,7 +137,9 @@ def load_facts(
                     XbrlFact(
                         ticker=ticker, cik=cik, concept=concept, unit=unit,
                         value=float(obs["val"]),
-                        period_start=dt.date.fromisoformat(obs["start"]) if obs.get("start") else None,
+                        period_start=(
+                            dt.date.fromisoformat(obs["start"]) if obs.get("start") else None
+                        ),
                         period_end=dt.date.fromisoformat(obs["end"]),
                         accession_no=obs["accn"], form=obs.get("form", ""),
                         filed_date=dt.date.fromisoformat(obs["filed"]),

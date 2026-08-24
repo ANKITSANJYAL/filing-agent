@@ -135,9 +135,11 @@ def test_empty_payload_yields_nothing() -> None:
 
 
 def test_unknown_ticker_is_a_hard_error() -> None:
-    with _client({"0": {"ticker": "NVDA", "cik_str": 1045810}}) as client:
-        with pytest.raises(LookupError, match="NOPE"):
-            resolve_ciks(client, ("NVDA", "NOPE"))
+    with (
+        _client({"0": {"ticker": "NVDA", "cik_str": 1045810}}) as client,
+        pytest.raises(LookupError, match="NOPE"),
+    ):
+        resolve_ciks(client, ("NVDA", "NOPE"))
 
 
 # --- The boundary assertion ----------------------------------------------------

@@ -29,8 +29,8 @@ def test_ixbrl_header_is_dropped_entirely() -> None:
 
 def test_unrelated_nested_tag_does_not_end_the_skip_early() -> None:
     """A <div> inside <ix:header> must not be mistaken for the header's own close."""
-    html = f"<html><ix:header><div><span>0001045810 dei:EntityCentralIndexKey</span></div>" \
-           f"</ix:header><p>Revenue was $130.5 billion.</p></html>"
+    html = "<html><ix:header><div><span>0001045810 dei:EntityCentralIndexKey</span></div>" \
+           "</ix:header><p>Revenue was $130.5 billion.</p></html>"
     text = extract_text(html)
     assert "dei:" not in text and "0001045810" not in text
     assert "Revenue was $130.5 billion." in text

@@ -82,9 +82,12 @@ def test_user_agent_header_is_actually_sent() -> None:
 
 
 def test_403_raises_a_message_that_names_the_real_cause() -> None:
-    with EdgarClient(user_agent=VALID_UA, transport=_transport(403, b"Request Rate Threshold")) as c:
-        with pytest.raises(SecAccessDenied, match="User-Agent problem"):
-            c.get_json("https://data.sec.gov/anything.json")
+    transport = _transport(403, b"Request Rate Threshold")
+    with (
+        EdgarClient(user_agent=VALID_UA, transport=transport) as client,
+        pytest.raises(SecAccessDenied, match="User-Agent problem"),
+    ):
+        client.get_json("https://data.sec.gov/anything.json")
 
 
 # --- Cache-first behaviour (idempotent re-runs) --------------------------------
@@ -113,8 +116,10 @@ def test_second_download_is_free(tmp_path) -> None:
 def test_no_partial_file_is_left_behind_on_failure(tmp_path) -> None:
     """A truncated .part must never be renamed into place and later look cached."""
     dest = tmp_path / "boom.htm"
-    with EdgarClient(user_agent=VALID_UA, transport=_transport(404)) as client:
-        with pytest.raises(httpx.HTTPStatusError):
-            client.download("https://sec.gov/missing.htm", dest)
+    with (
+        EdgarClient(user_agent=VALID_UA, transport=_transport(404)) as client,
+        pytest.raises(httpx.HTTPStatusError),
+    ):
+        client.download("https://sec.gov/missing.htm", dest)
     assert not dest.exists()
     assert list(tmp_path.glob("*.part")) == []

@@ -81,7 +81,10 @@ def resolve_ciks(client: EdgarClient, tickers: tuple[str, ...]) -> dict[str, int
     """
     raw = client.get_json(TICKER_MAP_URL)
     by_ticker = {row["ticker"].upper(): int(row["cik_str"]) for row in raw.values()}
-    missing = sorted({t for t in tickers if t.upper() not in by_ticker and t.upper() not in CIK_OVERRIDES})
+    missing = sorted({
+        t for t in tickers
+        if t.upper() not in by_ticker and t.upper() not in CIK_OVERRIDES
+    })
     if missing:
         raise LookupError(f"tickers absent from SEC's ticker map: {missing}")
     return {t: CIK_OVERRIDES.get(t.upper(), by_ticker.get(t.upper())) for t in tickers}
@@ -181,8 +184,10 @@ def assert_fiscal_periods(
     """
     out_of_scope = [f for f in filings if f.fiscal_year not in fiscal_years]
     if out_of_scope:
-        sample = ", ".join(f"{f.ticker} {f.form} {f.report_date} -> FY{f.fiscal_year}"
-                           for f in out_of_scope[:5])
+        sample = ", ".join(
+            f"{f.ticker} {f.form} {f.report_date} -> FY{f.fiscal_year}"
+            for f in out_of_scope[:5]
+        )
         raise FiscalPeriodError(
             f"{len(out_of_scope)} filing(s) outside FY{fiscal_years}: {sample}"
         )
@@ -247,5 +252,8 @@ def summarize_table(filings: list[FilingRef]) -> str:
     for f in filings:
         counts[f.form] = counts.get(f.form, 0) + 1
     lines.append("-" * len(header))
-    lines.append(f"{len(filings)} filings: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())))
+    lines.append(
+        f"{len(filings)} filings: "
+        + ", ".join(f"{k}={v}" for k, v in sorted(counts.items()))
+    )
     return "\n".join(lines)

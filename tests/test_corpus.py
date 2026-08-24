@@ -10,7 +10,6 @@ from pathlib import Path
 import httpx
 import pytest
 
-from filing_agent.ingest.edgar_client import EdgarClient
 from filing_agent.ingest.corpus import (
     ManifestRow,
     assert_corpus_on_disk,
@@ -21,6 +20,7 @@ from filing_agent.ingest.corpus import (
     read_manifest,
     write_manifest,
 )
+from filing_agent.ingest.edgar_client import EdgarClient
 from filing_agent.ingest.filing_index import FilingRef, FiscalPeriodError
 
 UA = "Test User test@example.com"
