@@ -1,11 +1,13 @@
 """Re-chunk, reload, re-embed and re-index after a chunking-parameter change."""
 import time
 
-from filing_agent.evals.tier1 import read_tier1
 from filing_agent.ingest.pipeline import build_all
 from filing_agent.retrieval import db
 from filing_agent.retrieval.embed import (
-    assert_embeddings_complete, create_hnsw_index, embed_pending, load_encoder,
+    assert_embeddings_complete,
+    create_hnsw_index,
+    embed_pending,
+    load_encoder,
 )
 
 manifest, chunks, facts = build_all()
