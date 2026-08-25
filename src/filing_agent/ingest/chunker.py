@@ -23,16 +23,17 @@ from .sections import Section
 
 UNSECTIONED: Final[str] = "UNSECTIONED"
 
-# Size proxy. `tiktoken` is the wrong tokenizer for Claude and would mis-size every
-# chunk; the right tool is Anthropic's `count_tokens` endpoint. Until an API key is
-# available we size in characters at ~4 chars/token and calibrate later against
-# count_tokens on a sample of real chunks (D-0017).
-CHARS_PER_TOKEN: Final[int] = 4
+# Size proxy, calibrated against Anthropic's `count_tokens` on 25 real chunks (D-0031):
+# median 2.71 chars/token, mean 2.73, range 1.86-3.89. NOT the usual ~4 chars/token
+# heuristic — filings are dense with digits, currency symbols and table pipes
+# ("| $130,497 | $60,922 |"), which cost roughly a token per character. Using 4 made
+# every chunk ~48% larger than the 512 tokens PROPOSAL.md §4.4 specifies for Arm B.
+CHARS_PER_TOKEN: Final[float] = 2.71
 TARGET_TOKENS: Final[int] = 512
 MAX_TOKENS: Final[int] = 768  # headroom so a table run can finish inside one chunk
 
-TARGET_CHARS: Final[int] = TARGET_TOKENS * CHARS_PER_TOKEN
-MAX_CHARS: Final[int] = MAX_TOKENS * CHARS_PER_TOKEN
+TARGET_CHARS: Final[int] = int(TARGET_TOKENS * CHARS_PER_TOKEN)
+MAX_CHARS: Final[int] = int(MAX_TOKENS * CHARS_PER_TOKEN)
 
 CELL_SEP: Final[str] = " | "
 
@@ -63,7 +64,7 @@ class Chunk(BaseModel):
 
     @property
     def estimated_tokens(self) -> int:
-        return self.n_chars // CHARS_PER_TOKEN
+        return int(self.n_chars / CHARS_PER_TOKEN)
 
 
 def is_table_row(line: str) -> bool:

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(PYTHONPATH=src nohup .venv/bin/python scripts/rebuild_index.py)",
+      "Bash(echo \"rebuild started \\(PID $!\\) — ~26 min for 14,112 chunks\")",
+      "Read(//private/tmp/**)"
     ]
   }
 }

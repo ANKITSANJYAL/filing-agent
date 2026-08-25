@@ -753,3 +753,33 @@ process was not.
 **Rule going forward:** a wall-clock duration from a background or long-running process is
 not a performance measurement. Time the operation directly, in the foreground, with
 nothing else contending, before drawing any conclusion about speed.
+
+---
+
+## D-0031 · 2026-08-25 · Chunk sizing recalibrated: 2.71 chars/token, not 4
+
+**Decision:** `CHARS_PER_TOKEN = 2.71`, measured against Anthropic's `count_tokens`
+endpoint on 25 real chunks (median 2.71, mean 2.73, range 1.86–3.89). Settles the
+calibration owed in D-0018.
+
+**The error it corrects.** The placeholder was the usual ~4 chars/token heuristic. That
+is a prose figure; SEC filings are dense with digits, currency symbols and table pipes
+(`| $130,497 | $60,922 |`), which cost roughly one token per character. Every chunk was
+therefore **~48% larger than intended** — a "512-token" chunk was really ~757 tokens.
+
+**Why it mattered enough to rebuild.** PROPOSAL.md §4.4 defines Arm B as *"fixed
+512-token chunks"*. Publishing an ablation whose naive-RAG arm used 757-token chunks
+would have described the corpus incorrectly in the write-up's headline experiment, and
+chunk size is a first thing an interviewer would ask about.
+
+**After the fix:** 9,449 → 14,112 chunks. Verified against the real tokenizer: median
+**461 tokens** against a 512 target (previously ~757), with estimates now tracking
+reality within 1%. The residual −10% is chunks closing at line boundaries before
+reaching the cap, which is the intended behaviour.
+
+**Cost:** re-chunk, reload, re-embed (~26 min) and re-run the T1.6 ablation. Taken
+because the numbers are the deliverable.
+
+**Generalises:** a token-count heuristic is domain-specific. Any corpus that is not
+mostly prose — tables, code, JSON, non-English — needs its own measurement, and the
+measurement is free via `count_tokens`.

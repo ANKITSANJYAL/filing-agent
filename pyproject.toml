@@ -10,6 +10,7 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "pgvector>=0.3",
     "sentence-transformers>=3.0",
+    "anthropic>=1.0.0",
 ]
 
 [project.optional-dependencies]
