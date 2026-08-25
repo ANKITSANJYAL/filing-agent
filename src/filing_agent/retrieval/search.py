@@ -83,13 +83,23 @@ def lexical_search(
     tickers: Sequence[str] | None = None,
     fiscal_years: Sequence[int] | None = None,
 ) -> list[Hit]:
-    """Postgres FTS. Standing in for BM25 — tradeoff documented in D-0026."""
+    """Postgres FTS with OR semantics, standing in for BM25 (D-0028).
+
+    The query is lexemised and joined with `|` rather than passed to `plainto_tsquery`,
+    which ANDs every term. Conjunctive matching is the wrong model for a natural-language
+    question: "What are the principal risks AAPL disclosed for fiscal 2024?" requires a
+    chunk containing *all* of those stems, and filings write "Apple Inc." rather than the
+    ticker, so the AND matched nothing at all — scoring lexical retrieval 0.000 across
+    every case. BM25 ranks documents containing *any* query term, weighted by rarity;
+    OR + `ts_rank_cd` is the closest Postgres equivalent.
+    """
     where, params = _filters(tickers, fiscal_years)
     with conn.cursor() as cur:
         cur.execute(
             f"SELECT {_SELECT}, ts_rank_cd(tsv, q) AS score "  # noqa: S608 - fixed columns
-            f"FROM chunks, plainto_tsquery('english', %s) q "
-            f"WHERE tsv @@ q{where} ORDER BY score DESC LIMIT %s",
+            "FROM chunks, to_tsquery('english', "
+            "  array_to_string(tsvector_to_array(to_tsvector('english', %s)), ' | ')"
+            f") q WHERE tsv @@ q{where} ORDER BY score DESC LIMIT %s",
             [query, *params, top_k],
         )
         rows = cur.fetchall()

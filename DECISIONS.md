@@ -669,3 +669,42 @@ agreement between the retrievers below the cut is invisible.
 **Uniform score direction.** Dense search returns `1 - cosine_distance`, so higher is
 better in *every* retriever. Mixing conventions is how a fusion step silently inverts
 one of its inputs while still producing plausible-looking output.
+
+---
+
+## D-0028 · 2026-08-25 · The lexical arm scored 0.000 because of a query-operator bug
+
+**Decision:** Lexical retrieval builds an **OR** query — the question is lexemised and
+joined with `|` — instead of `plainto_tsquery`, which ANDs every term.
+
+**What happened.** The first four-arm run produced:
+
+```
+lexical (FTS)              0.000     0.000      50
+dense (BGE-M3)             0.220     0.133      50
+hybrid (RRF)               0.220     0.130      50
+hybrid + rerank            0.360     0.227      50
+```
+
+An arm scoring **exactly** zero on all 50 cases is not a finding, it is a bug. Diagnosis:
+`plainto_tsquery('english', "What are the principal risks AAPL disclosed for fiscal
+2024?")` yields `'princip' & 'risk' & 'aapl' & 'disclos' & 'fiscal' & '2024'` — every
+stem required. Filings write "Apple Inc.", not the ticker: 10 chunks contain "AAPL"
+against 292 containing "Apple". The conjunction matched nothing, in every case.
+
+**Why this was nearly a published falsehood.** The write-up's headline is a retrieval
+ablation. "Postgres full-text search achieves 0.000 recall@5" would have been stated as
+a measured result about lexical retrieval, when it was a statement about my choice of
+query operator. It is also exactly the kind of number an interviewer probes.
+
+**The fix is not a tweak.** BM25 ranks any document containing *any* query term, weighted
+by term rarity; conjunctive matching is a different retrieval model, not a weaker one.
+D-0026 noted `ts_rank_cd` is not BM25 and named the *ranking function* as the compromise
+— the larger discrepancy was in the query operator, and I had not looked.
+
+**What caught it:** the number itself. 0.220 for dense and 0.000 for lexical is not a
+plausible spread between two reasonable retrievers over the same 50 questions. A
+suspicious result is evidence about the harness before it is evidence about the system.
+
+**Generalises:** an arm that scores exactly zero, exactly one, or exactly equal to
+another arm should be treated as a defect report until proven otherwise.
