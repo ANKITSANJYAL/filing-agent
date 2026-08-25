@@ -616,3 +616,56 @@ unprotected case is the one under test.
 **Generalises:** the same NULL semantics apply to any uniqueness rule over optional
 columns. `ON CONFLICT` inherits it too — the old upsert clause silently never matched
 for instant facts, so re-running the loader could have duplicated them.
+
+---
+
+## D-0026 · 2026-08-24 · BGE-M3 embeddings in fp16; Postgres FTS as the lexical arm
+
+**Decision:** BGE-M3 (local, 1024-dim, L2-normalised) via sentence-transformers, loaded
+in **fp16** on GPU backends. Lexical retrieval is Postgres full-text search.
+
+**fp16 is measured, not assumed.** Apple MPS, batch 64, this corpus:
+fp32 **8.2 chunks/s**, fp16 **9.9 chunks/s** — 21% faster. Retrieval ranks by cosine
+similarity and fp16's reduced mantissa sits far below the margin separating hits;
+vectors are stored back as float32 either way.
+
+**A measurement mistake worth recording.** The first throughput reading was
+**2.1 chunks/s**, implying a 60-minute run. That figure was an artifact: a test I ran
+concurrently loaded a *second* BGE-M3 onto the same MPS device, and the two jobs
+contended. Measured without contention the same code does 8.2 — 4x higher. Benchmarks
+taken while other GPU work is running measure the contention, not the code.
+
+**`max_seq_length` deliberately left at default.** The obvious optimisation looked like
+capping BGE-M3's 8192-token window, since our chunks are ~500 tokens (p50 433, p99 914,
+max 1179; 99.5% under 1024). But sentence-transformers pads each batch to its own
+longest item, not to the model ceiling — so lowering it would only truncate the tail
+without buying speed.
+
+**Lexical arm: Postgres FTS rather than a dedicated BM25 engine** (§8.4). `ts_rank_cd`
+is not BM25 — no tunable k1/b, and term saturation is handled differently. The tradeoff
+is one database instead of two, and the retrieval ablation (T1.6) will show what it
+costs against dense and hybrid on the same 50 labelled pairs.
+
+---
+
+## D-0027 · 2026-08-24 · RRF fuses ranks, not scores
+
+**Decision:** Hybrid retrieval fuses lexical and dense with reciprocal rank fusion,
+k=60, over a candidate pool 5x the requested top-k.
+
+**Why rank-based:** `ts_rank_cd` and cosine similarity are on incomparable scales. Score
+fusion would require normalising them, which introduces a weighting parameter that has
+to be justified and tuned — and tuned on what, before the eval set exists? Ranks need no
+calibration, so the hybrid arm has no free parameter that could be quietly fitted to the
+questions it is later scored on.
+
+**k=60** is the value from the original Cormack et al. paper. It damps the influence of
+very high ranks, so a chunk ranked 1st by one retriever cannot alone outrank a chunk
+ranked well by both — which is the property the ablation is testing for.
+
+**Candidate depth 5x top-k:** fusion must see more candidates than it returns, or
+agreement between the retrievers below the cut is invisible.
+
+**Uniform score direction.** Dense search returns `1 - cosine_distance`, so higher is
+better in *every* retriever. Mixing conventions is how a fusion step silently inverts
+one of its inputs while still producing plausible-looking output.
