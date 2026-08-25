@@ -41,6 +41,21 @@ TICKERS: Final[tuple[str, ...]] = (
 
 FISCAL_YEARS: Final[tuple[int, ...]] = (2024, 2025)
 
+# How each company names itself in its own filings. Filings never use ticker symbols in
+# body text ("Apple Inc.", never "AAPL"), so eval queries phrased with tickers measure a
+# vocabulary mismatch rather than retrieval quality — dense recall@5 rose 0.220 -> 0.380
+# on the identical labels when queries used names instead (DECISIONS.md D-0029).
+COMPANY_NAMES: Final[dict[str, str]] = {
+    "NVDA": "NVIDIA",
+    "AAPL": "Apple",
+    "MSFT": "Microsoft",
+    "JPM": "JPMorgan Chase",
+    "XOM": "Exxon Mobil",
+    "PFE": "Pfizer",
+    "WMT": "Walmart",
+    "COST": "Costco",
+}
+
 # SEC's ticker map points at the *current* registrant, which is not always the filer
 # that submitted the reports in our window. XOM now maps to CIK 2115436
 # ("ExxonMobil Holdings Corp", first filing 2026-07, form 8-K12B — a holding-company

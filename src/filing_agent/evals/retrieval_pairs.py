@@ -18,7 +18,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Final
 
-from ..config import STUB_SECTION_ALLOWLIST
+from ..config import COMPANY_NAMES, STUB_SECTION_ALLOWLIST
 from ..ingest.corpus import ManifestRow
 from ..ingest.extract import extract_text
 from ..ingest.sections import (
@@ -111,8 +111,10 @@ def build_cases(
                 continue
             section, row = buckets[ticker].pop(0)
             templates = TEMPLATES[section]
+            # Company name, not ticker: filings write "Apple Inc.", so a ticker-phrased
+            # query tests string matching rather than retrieval (D-0029).
             query = templates[index % len(templates)].format(
-                ticker=ticker, year=row.fiscal_year
+                ticker=COMPANY_NAMES[ticker], year=row.fiscal_year
             )
             cases.append(RetrievalCase(
                 case_id=f"r-{len(cases) + 1:03d}-{ticker}-{section}-{row.fiscal_year}",

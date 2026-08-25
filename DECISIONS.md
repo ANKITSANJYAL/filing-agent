@@ -708,3 +708,48 @@ suspicious result is evidence about the harness before it is evidence about the 
 
 **Generalises:** an arm that scores exactly zero, exactly one, or exactly equal to
 another arm should be treated as a defect report until proven otherwise.
+
+---
+
+## D-0029 · 2026-08-25 · Eval queries use company names, not ticker symbols
+
+**Decision:** Retrieval-eval queries name the company as its filings do ("Apple",
+"JPMorgan Chase"), not by ticker. Labels are unchanged — only the query surface form.
+
+**Measured on identical labels, before any retrieval tuning:**
+
+| Query form | lexical recall@5 | dense recall@5 |
+|---|---|---|
+| `AAPL` | 0.100 | 0.220 |
+| `Apple` | 0.140 | **0.380** |
+
+Dense recall nearly doubles. Filings never use ticker symbols in body text — 10 chunks
+contain "AAPL" against 292 containing "Apple" — so a ticker-phrased query was testing
+whether a rare string happened to appear, not whether the retriever found the right
+section. Analysts say "Apple" anyway, so the name form is also the more realistic query.
+
+**Why changing a "frozen" set is legitimate here.** D-0003's freeze exists to stop
+questions drifting toward what the system answers well. This changes the *query surface
+form* to remove a measurement artifact, keeps every label identical, and was done
+**before any retrieval tuning** — which is the only point at which such a change is
+defensible. Doing it after seeing arm-level results would have been tuning to the test.
+
+---
+
+## D-0030 · 2026-08-25 · Correction: the cross-encoder is not slow
+
+**Retracted claim.** The first four-arm run reported the rerank arm taking **21,322s
+(5.9 hours)**, which I described as "~300x too slow".
+
+**That was wrong.** Measured directly, `bge-reranker-v2-m3` on MPS runs at **0.16 s/pair**
+— 1,250 pairs is roughly 200 seconds. The 21,322s figure was wall-clock on a backgrounded
+process that spanned a system sleep; it measured elapsed time, not compute.
+
+**Second instance of the same mistake this session.** D-0026 records an embedding
+throughput reading of 2.1 chunks/s that was really 8.2 — that one was GPU contention from
+a concurrently running test. Both readings came from a timer that was running while the
+process was not.
+
+**Rule going forward:** a wall-clock duration from a background or long-running process is
+not a performance measurement. Time the operation directly, in the foreground, with
+nothing else contending, before drawing any conclusion about speed.

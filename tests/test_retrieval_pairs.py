@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from filing_agent.config import STUB_SECTION_ALLOWLIST
+from filing_agent.config import COMPANY_NAMES, STUB_SECTION_ALLOWLIST
 from filing_agent.evals.retrieval_eval import read_cases
 from filing_agent.evals.retrieval_pairs import SECTION_ORDER, TEMPLATES
 
@@ -26,6 +26,14 @@ def cases():
 
 # --- No vocabulary leakage (the rule that keeps the ablation fair) --------------
 
+def test_queries_use_company_names_not_tickers() -> None:
+    """Filings write "Apple Inc.", never "AAPL". A ticker-phrased query measures a
+    vocabulary mismatch rather than retrieval (D-0029)."""
+    for case in read_cases():
+        assert COMPANY_NAMES[case.tickers[0]] in case.query, case.query
+        assert case.tickers[0] not in case.query.split(), case.query
+
+
 def test_every_query_is_a_verbatim_template() -> None:
     """Queries must never be derived from the text they should retrieve.
 
@@ -34,7 +42,7 @@ def test_every_query_is_a_verbatim_template() -> None:
     result. Checking the queries are pure templates makes that impossible by design.
     """
     patterns = [
-        re.compile("^" + re.escape(t).replace(r"\{ticker\}", r"[A-Z]+")
+        re.compile("^" + re.escape(t).replace(r"\{ticker\}", r"[A-Za-z ]+")
                    .replace(r"\{year\}", r"\d{4}") + "$")
         for templates in TEMPLATES.values() for t in templates
     ]
@@ -53,9 +61,9 @@ def test_no_ticker_gets_bespoke_phrasing(cases) -> None:
     by_section: dict[str, set[str]] = {}
     for case in cases:
         section = case.relevant[0][1]
-        skeleton = case.query.replace(case.tickers[0], "{T}").replace(
-            str(case.fiscal_years[0]), "{Y}"
-        )
+        skeleton = case.query.replace(
+            COMPANY_NAMES[case.tickers[0]], "{T}"
+        ).replace(str(case.fiscal_years[0]), "{Y}")
         by_section.setdefault(section, set()).add(skeleton)
     for section, skeletons in by_section.items():
         assert skeletons <= {

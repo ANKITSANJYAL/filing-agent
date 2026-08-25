@@ -20,8 +20,9 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 - `T1.3` — XBRL facts. Walkthrough delivered 2026-08-21; **recap unanswered**.
 - `T3.1` — Tier-1 eval set. Walkthrough delivered 2026-08-22; **recap unanswered**.
 - `T1.4` — Postgres schema + loaders. Walkthrough delivered 2026-08-24; **recap unanswered**.
+- `T1.5/T1.6` — Retrieval + ablation. Walkthrough delivered 2026-08-25; **recap unanswered**.
 
-All nine stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
+All ten stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
 
 ---
 
@@ -51,8 +52,8 @@ All nine stay `CODED` rather than `DONE` until the recap questions are answered 
 | T1.3 | XBRL facts ingestion | `CODED` | 107 tests pass. 2,010 resolved facts, 8 tickers, all 3 assertions green. |
 | T3.1 | *(pulled forward — D-0003)* tier-1 XBRL set | `CODED` | 127 tests pass. 72 frozen questions committed; 564-question pool. |
 | T1.4 | Postgres/pgvector schema + loaders | `CODED` | 135 tests pass. 64/9,449/2,010/72 rows loaded; FK + UNIQUE invariants verified. |
-| T1.5 | Lexical + dense + RRF + rerank pipeline | `NOT_STARTED` | |
-| T1.6 | 50-pair retrieval eval + ablation table | `NOT_STARTED` | W1 done-condition |
+| T1.5 | Lexical + dense + RRF + rerank pipeline | `CODED` | BGE-M3 fp16, 9,449 chunks embedded, HNSW built. |
+| T1.6 | 50-pair retrieval eval + ablation table | `CODED` | **W1 DONE-CONDITION MET.** writeup/retrieval_ablation.md |
 
 ## T2 — Agent & MCP
 
@@ -115,3 +116,4 @@ All nine stay `CODED` rather than `DONE` until the recap questions are answered 
 | 2026-08-21 | T1.3 | XBRL ingested: 2,971 raw -> 2,010 resolved facts. Found NVDA 10:1 split restating all per-share figures, and that no revenue concept is common to all 8 tickers. T3.1 now unblocked. |
 | 2026-08-22 | T3.1 | Tier-1 eval set generated from XBRL facts: 564 pool, 72 frozen + committed. Two grading bugs found by tests (tolerance too loose, then float dust from binary subtraction); fixed with Decimal arithmetic. |
 | 2026-08-24 | T1.4 | uv + Docker resolved. Postgres/pgvector loaded with 64/9,449/2,010/72 rows. Integration test found UNIQUE NULLS bug leaving 439 instant facts unprotected. Lint clean. |
+| 2026-08-25 | T1.5/T1.6 | Retrieval ablation complete: lexical .140 / dense .380 / hybrid .400 / +rerank .500 recall@5. Two eval bugs caught (AND-semantics lexical scoring 0.000; ticker-vs-company-name). W1 done-condition met. |

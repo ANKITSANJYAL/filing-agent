@@ -10,8 +10,12 @@ from filing_agent.evals.retrieval_eval import evaluate, format_table, read_cases
 from filing_agent.retrieval import db
 from filing_agent.retrieval.embed import load_encoder
 from filing_agent.retrieval.search import (
-    CANDIDATE_MULTIPLIER, dense_search, hybrid_search, lexical_search,
-    load_reranker, rerank,
+    CANDIDATE_MULTIPLIER,
+    dense_search,
+    hybrid_search,
+    lexical_search,
+    load_reranker,
+    rerank,
 )
 
 K = 5
