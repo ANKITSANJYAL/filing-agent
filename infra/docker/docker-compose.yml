@@ -1,0 +1,23 @@
+# Local Postgres with pgvector. One database holds chunks, metadata, XBRL facts and
+# eval results (PROPOSAL.md §8.1) — one system to operate rather than a vector DB
+# alongside a relational one.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: filing-agent-db
+    environment:
+      POSTGRES_USER: filing
+      POSTGRES_PASSWORD: filing
+      POSTGRES_DB: filing_agent
+    ports:
+      - "5432:5432"
+    volumes:
+      - filing_agent_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U filing -d filing_agent"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  filing_agent_pgdata:

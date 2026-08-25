@@ -19,8 +19,9 @@ Single source of truth for progress. Structure mirrors `PROPOSAL.md` §10.
 - `T1.2c` — Chunker. Walkthrough delivered 2026-08-21; **recap unanswered**.
 - `T1.3` — XBRL facts. Walkthrough delivered 2026-08-21; **recap unanswered**.
 - `T3.1` — Tier-1 eval set. Walkthrough delivered 2026-08-22; **recap unanswered**.
+- `T1.4` — Postgres schema + loaders. Walkthrough delivered 2026-08-24; **recap unanswered**.
 
-All eight stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
+All nine stay `CODED` rather than `DONE` until the recap questions are answered (CLAUDE.md §1.5).
 
 ---
 
@@ -30,9 +31,9 @@ All eight stay `CODED` rather than `DONE` until the recap questions are answered
 
 | ID | Item | Status | Blocking | Unblock with |
 |---|---|---|---|---|
-| E1 | Docker Desktop not installed | `BLOCKED` | T1.4 (Postgres/pgvector), T4.1 (Langfuse) | Install Docker Desktop for Mac; verify `docker --version` |
-| E2 | `uv` not installed | `BLOCKED` | any dependency install / test run | `curl -LsSf https://astral.sh/uv/install.sh \| sh` then `uv sync --extra dev` |
-| E3 | Python 3.12 not present (system has 3.14) | `BLOCKED` | pinned interpreter per §8.14 | resolved automatically by `uv sync` (pyproject pins `==3.12.*`) |
+| E1 | ~~Docker~~ | `RESOLVED` | — | Docker 29.7.2 running; pgvector/pg17 container up |
+| E2 | ~~`uv`~~ | `RESOLVED` | — | uv 0.12.5; Python 3.12.14 pinned; uv.lock committed |
+| E3 | ~~Python 3.12~~ | `RESOLVED` | — | 3.12.14 via uv |
 | E4 | `psql` client not installed | `BLOCKED` | T1.4 manual DB inspection | ships with Docker Postgres image; or `brew install libpq` |
 
 ---
@@ -49,7 +50,7 @@ All eight stay `CODED` rather than `DONE` until the recap questions are answered
 | T1.2c | Chunking + per-chunk metadata | `CODED` | 92 tests pass. 9,449 chunks, median ~477 tok, all pass assert_chunks_valid. |
 | T1.3 | XBRL facts ingestion | `CODED` | 107 tests pass. 2,010 resolved facts, 8 tickers, all 3 assertions green. |
 | T3.1 | *(pulled forward — D-0003)* tier-1 XBRL set | `CODED` | 127 tests pass. 72 frozen questions committed; 564-question pool. |
-| T1.4 | Postgres/pgvector schema | `BLOCKED` | needs E1 (Docker) |
+| T1.4 | Postgres/pgvector schema + loaders | `CODED` | 135 tests pass. 64/9,449/2,010/72 rows loaded; FK + UNIQUE invariants verified. |
 | T1.5 | Lexical + dense + RRF + rerank pipeline | `NOT_STARTED` | |
 | T1.6 | 50-pair retrieval eval + ablation table | `NOT_STARTED` | W1 done-condition |
 
@@ -113,3 +114,4 @@ All eight stay `CODED` rather than `DONE` until the recap questions are answered
 | 2026-08-21 | T1.2c | Chunker shipped: 9,449 chunks across 64 filings, table rows structurally unsplittable, whole-document coverage so NVDA's displaced statements stay retrievable. T1.2 complete. |
 | 2026-08-21 | T1.3 | XBRL ingested: 2,971 raw -> 2,010 resolved facts. Found NVDA 10:1 split restating all per-share figures, and that no revenue concept is common to all 8 tickers. T3.1 now unblocked. |
 | 2026-08-22 | T3.1 | Tier-1 eval set generated from XBRL facts: 564 pool, 72 frozen + committed. Two grading bugs found by tests (tolerance too loose, then float dust from binary subtraction); fixed with Decimal arithmetic. |
+| 2026-08-24 | T1.4 | uv + Docker resolved. Postgres/pgvector loaded with 64/9,449/2,010/72 rows. Integration test found UNIQUE NULLS bug leaving 439 instant facts unprotected. Lint clean. |

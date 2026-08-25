@@ -568,3 +568,51 @@ accepts an off-by-one answer. EPS change keys read `1.38`, `1.65`, `0.27`, `-0.0
 **Worth remembering:** "exact match" is a claim about the *comparison*, but it only holds
 if the *arithmetic producing the key* is exact too. The first fix addressed the
 comparison and silently broke the arithmetic.
+
+---
+
+## D-0024 · 2026-08-24 · One Postgres for chunks, facts, and eval results
+
+**Decision:** Single Postgres 17 + pgvector instance (`infra/docker/docker-compose.yml`),
+holding `filings`, `chunks`, `xbrl_facts`, and `eval_questions`. Implements §8.1.
+
+**Two invariants moved from Python into the schema**, so they hold regardless of which
+code path writes:
+
+- `chunks.accession_no` is a foreign key to `filings` — a chunk cannot cite a filing
+  outside the corpus, so a citation can never dangle.
+- `xbrl_facts` is UNIQUE on the economic fact — D-0020's "exactly one answer" rule
+  enforced by the database rather than by remembering to call an assertion.
+
+**Loaded:** 64 filings, 9,449 chunks, 2,010 facts, 72 eval questions. Lexical search over
+the generated `tsvector` returns sensible hits (NVDA MD&A chunks top the ranking for
+"data center revenue growth").
+
+**Also extracted `ingest/pipeline.py`.** The extract → section → chunk → facts sequence
+had been rebuilt inline in six separate verification runs; that is precisely how two
+callers drift apart about what the corpus contains. It now has one definition.
+
+---
+
+## D-0025 · 2026-08-24 · `UNIQUE NULLS NOT DISTINCT` — the constraint that looked right
+
+**Decision:** The economic-fact constraint uses `UNIQUE NULLS NOT DISTINCT`
+(Postgres 15+), with a migration for databases created before the fix.
+
+**The bug:** plain `UNIQUE` treats `NULL`s as **distinct**. Instant facts — every
+balance-sheet item, which has no `period_start` — therefore satisfied the constraint
+trivially no matter how many conflicting values were inserted. **439 of 2,010 rows were
+unprotected** while the constraint definition read as if it covered them.
+
+**How it was found, and why that matters more than the fix.** My manual verification
+inserted a duplicate and saw `UniqueViolation` — apparently confirming the constraint.
+It happened to pick `NetIncomeLoss`, a *duration* fact. The integration test picked a row
+with `LIMIT 1` and drew an instant fact instead, and failed. A hand-picked example
+confirmed the behaviour I expected; an arbitrary one found the hole.
+
+The test now deliberately selects `WHERE period_start IS NULL`, so the previously
+unprotected case is the one under test.
+
+**Generalises:** the same NULL semantics apply to any uniqueness rule over optional
+columns. `ON CONFLICT` inherits it too — the old upsert clause silently never matched
+for instant facts, so re-running the loader could have duplicated them.
