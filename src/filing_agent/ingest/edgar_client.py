@@ -52,6 +52,20 @@ class TokenBucket:
         self._tokens = min(self._capacity, self._tokens + (now - self._last_refill) * self._rate)
         self._last_refill = now
 
+    def try_acquire(self, tokens: float = 1.0) -> bool:
+        """Non-blocking variant: take tokens if available, else return False.
+
+        Blocking is right for our own SEC crawling (we want to wait our turn) but wrong
+        for serving HTTP, where a queued request ties up a worker instead of shedding
+        load. Same bucket, two arrival policies.
+        """
+        with self._lock:
+            self._refill()
+            if self._tokens < tokens:
+                return False
+            self._tokens -= tokens
+            return True
+
     def acquire(self, tokens: float = 1.0) -> float:
         """Block until `tokens` are available. Returns seconds actually waited."""
         if tokens > self._capacity:

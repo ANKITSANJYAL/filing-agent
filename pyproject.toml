@@ -12,6 +12,9 @@ dependencies = [
     "sentence-transformers>=3.0",
     "anthropic>=1.0.0",
     "langgraph>=1.2.11",
+    "fastapi>=0.141.1",
+    "uvicorn[standard]>=0.52.4",
+    "mcp>=2.1.1",
 ]
 
 [project.optional-dependencies]

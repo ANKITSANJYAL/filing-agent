@@ -834,3 +834,31 @@ phrasings regression-tested.
 **Smoke result after both fixes:** 5/5 questions answered with traceable citations;
 derived quantities (a year-over-year *change*) correctly remain `unverified` with
 disclosure, since a computed delta is not itself an XBRL fact.
+
+---
+
+## D-0034 · 2026-08-26 · Serving layer: fail closed, shed load, one tool implementation
+
+**FastAPI (T2.6).** `/ask` requires `X-API-Key`; `/health` does not.
+
+- **Fails closed.** If `FILING_AGENT_API_KEY` is unset the service returns 503 to every
+  request rather than serving open. An endpoint that spends model money must not be
+  reachable by accident during a misconfigured deploy.
+- **Rate limiting reuses `TokenBucket`** from the EDGAR client, via a new non-blocking
+  `try_acquire()`. Blocking is right when *we* crawl SEC (wait our turn); shedding is
+  right when serving HTTP (a queued request ties up a worker instead of rejecting).
+  One implementation, two arrival policies, one set of tests.
+- The §3 disclaimer ships in every response body and in the OpenAPI description.
+
+**MCP (T2.5).** Tool bodies are **imported** from `agent.tools`, never reimplemented —
+MCP is a transport, so any capability gap between it and the agent would be a bug. A
+`filing-agent://corpus` resource publishes the eight tickers and two fiscal years so a
+client can see the scope instead of discovering it through failures.
+
+Tool *descriptions* carry the two rules an MCP client cannot otherwise know: prefer XBRL
+over numbers found in filing text, and search by company name rather than ticker
+(D-0029). Those descriptions are the only instruction an external client receives.
+
+**mcp 2.x migration.** The installed SDK renamed `FastMCP` to `MCPServer`
+(`mcp.server.mcpserver`). Decorator surface unchanged; verified by inspecting the
+installed package rather than assuming, after the v1 import failed.

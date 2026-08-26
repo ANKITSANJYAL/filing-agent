@@ -10,7 +10,9 @@
       "Bash(python3 -)",
       "Bash(git check-ignore *)",
       "Bash(nohup bash -c 'set -a && . ./.env && set +a && PYTHONPATH=src .venv/bin/python scripts/rebuild_index.py')",
-      "Bash(echo \"rebuild restarted PID $!\")"
+      "Bash(echo \"rebuild restarted PID $!\")",
+      "Bash(~/.local/bin/uv add *)",
+      "Bash(.venv/bin/python -c ' *)"
     ]
   }
 }
