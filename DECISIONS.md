@@ -783,3 +783,54 @@ because the numbers are the deliverable.
 **Generalises:** a token-count heuristic is domain-specific. Any corpus that is not
 mostly prose — tables, code, JSON, non-English — needs its own measurement, and the
 measurement is free via `count_tokens`.
+
+---
+
+## D-0032 · 2026-08-26 · `xbrl_lookup` must anchor to the 10-K's period, not the calendar year
+
+**Bug:** the lookup matched facts with `EXTRACT(YEAR FROM period_end) = fiscal_year` and
+took the most recent. NVDA has 10-Q facts throughout calendar 2025, so "FY2025 net
+income" returned **$77.1bn for the period ending 2025-10-26** — a *quarterly* figure —
+instead of the annual **$72.88bn** ending 2025-01-26.
+
+**Consequence had it shipped:** every annual claim would have been verified against a
+quarterly fact and marked wrong. The project's headline is "every numeric claim is
+auto-verified against XBRL"; a verifier checking the wrong period is worse than none,
+because it produces confident false negatives.
+
+**Fix:** join to `filings` and require `f.period_end = fl.fiscal_period` for the 10-K of
+that fiscal year, plus a 350–380 day duration band for duration facts. Instant facts
+(balance-sheet items) match the fiscal-year-end date directly.
+
+**Found by:** a unit test that fetched "an NVDA FY2025 net income fact" the same wrong
+way and got a value that did not match what the tool returned. Third time this session a
+period/completeness assumption failed silently (D-0007, D-0020, this).
+
+---
+
+## D-0033 · 2026-08-26 · Verify against the claim's period, not the chunk's filing year
+
+**Bug:** `verify_claim` used `hit.fiscal_year` — the fiscal year of the *filing the quote
+came from*. Every 10-K prints prior-year comparatives, so a correct FY2024 figure quoted
+from the FY2025 filing was checked against FY2025 data.
+
+**Caught by the first smoke run**, not by a test:
+
+```
+[xbrl/FAIL] AAPL diluted EPS for fiscal year 2024 was $6.08
+            cite 0000320193-25-000079:0124   (the FY2025 filing)
+```
+
+$6.08 is correct for FY2024. Verification compared it to FY2025's $7.46 and failed it.
+
+**Fix:** `claim_fiscal_year()` reads the year from the claim's own `period` field, falling
+back to the chunk's year only when absent, and ignores years outside the corpus.
+
+**A second bug inside the fix.** The first regex was `\b(20\d{2})\b`, which does not match
+`FY2024` — there is no word boundary between `Y` and `2`, both being word characters. The
+most common phrasing silently failed. Now `(?<!\d)(20\d{2})(?!\d)`, with all four
+phrasings regression-tested.
+
+**Smoke result after both fixes:** 5/5 questions answered with traceable citations;
+derived quantities (a year-over-year *change*) correctly remain `unverified` with
+disclosure, since a computed delta is not itself an XBRL fact.

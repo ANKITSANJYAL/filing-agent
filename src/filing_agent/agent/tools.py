@@ -146,12 +146,22 @@ def xbrl_lookup(conn: psycopg.Connection, params: XbrlLookupInput) -> XbrlLookup
             detail=f"no XBRL concept known for {params.concept!r}",
         )
     with conn.cursor() as cur:
+        # Anchor to the 10-K's own period end rather than the calendar year of the
+        # fact. Matching on EXTRACT(YEAR FROM period_end) returned NVDA's Q3 figure
+        # ($77.1bn, period ending 2025-10-26) for "FY2025" instead of the annual
+        # $72.88bn ending 2025-01-26 — verification would then mark correct annual
+        # answers wrong against a quarterly fact (D-0032).
         cur.execute(
-            "SELECT value, unit, period_end, accession_no, restated FROM xbrl_facts"
-            " WHERE ticker = %s AND concept = %s"
-            "   AND EXTRACT(YEAR FROM period_end) = %s"
-            " ORDER BY period_end DESC LIMIT 1",
-            (ticker, resolved, params.fiscal_year),
+            "SELECT f.value, f.unit, f.period_end, f.accession_no, f.restated"
+            " FROM xbrl_facts f"
+            " JOIN filings fl ON fl.ticker = f.ticker AND fl.form_type = '10-K'"
+            "                AND fl.fiscal_year = %s"
+            " WHERE f.ticker = %s AND f.concept = %s"
+            "   AND f.period_end = fl.fiscal_period"
+            "   AND (f.period_start IS NULL"
+            "        OR (f.period_end - f.period_start) BETWEEN 350 AND 380)"
+            " LIMIT 1",
+            (params.fiscal_year, ticker, resolved),
         )
         row = cur.fetchone()
         if row is None:

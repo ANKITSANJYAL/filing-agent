@@ -60,9 +60,9 @@ All ten stay `CODED` rather than `DONE` until the recap questions are answered (
 | ID | Item | Status | Notes |
 |---|---|---|---|
 | T2.1 | Pydantic schemas (Claim, Memo, Citation, Verification) | `CODED` | 19 tests. §3's never-silent rule enforced by validator. |
-| T2.2 | LangGraph graph + typed state | `NOT_STARTED` | |
+| T2.2 | LangGraph graph + typed state | `CODED` | plan->retrieve->facts->memo->replan; 18 tests. |
 | T2.3 | Tools (retrieve, xbrl_lookup, calculator) | `CODED` | 23 tests. AST-allowlist calculator; per-filer concept resolution. |
-| T2.4 | Verification / re-plan loop | `NOT_STARTED` | max 3 re-plans |
+| T2.4 | Verification / re-plan loop | `CODED` | Bounded at 3. Smoke 5/5 with citations; 2 period bugs found+fixed. |
 | T2.5 | MCP server | `NOT_STARTED` | |
 | T2.6 | FastAPI service + auth/rate limit | `NOT_STARTED` | |
 
@@ -119,3 +119,4 @@ All ten stay `CODED` rather than `DONE` until the recap questions are answered (
 | 2026-08-25 | T1.5/T1.6 | Retrieval ablation complete: lexical .140 / dense .380 / hybrid .400 / +rerank .500 recall@5. Two eval bugs caught (AND-semantics lexical scoring 0.000; ticker-vs-company-name). W1 done-condition met. |
 | 2026-08-25 | T2.1 + D-0031 | Chunk sizing recalibrated (4 -> 2.71 chars/token; chunks were 48% oversized). Corpus rebuilt to 14,112 chunks. Agent output schemas added: unverified numeric claims are unrepresentable without disclosure. |
 | 2026-08-25 | T1.6 re-run + T2.3 | Ablation re-run on 461-token chunks: dense MRR .352 beats hybrid .280 — fusing a weak lexical arm degrades ranking. Agent tools added. |
+| 2026-08-26 | T2.2/T2.4 | Agent graph + re-plan loop. Smoke run found two period-mismatch bugs (quarterly vs annual facts; comparatives verified against wrong year). Both fixed and regression-tested. |
